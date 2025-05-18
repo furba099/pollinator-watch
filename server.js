@@ -9,10 +9,12 @@ dotenv.config();
 
 const app = express();
 
-// ✅ Allow CORS only from your Netlify frontend
+// ✅ Full CORS config for Netlify
 app.use(cors({
   origin: "https://gregarious-caramel-849921.netlify.app",
-  credentials: true
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
 // Middleware
@@ -32,7 +34,7 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     console.log("MongoDB connected");
 
-    // ✅ Listen on port 3000
+    // Start server
     app.listen(3000, () => {
       console.log("Server running on http://localhost:3000");
     });
