@@ -9,18 +9,18 @@ dotenv.config();
 
 const app = express();
 
-// ✅ Full CORS config for Netlify
+// ✅ Final CORS config (no .options route!)
 app.use(cors({
   origin: "https://gregarious-caramel-849921.netlify.app",
-  credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE"],
-  allowedHeaders: ["Content-Type", "Authorization"]
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true
 }));
 
 // Middleware
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-app.use(express.static('public')); // Serve frontend HTML
+app.use(express.static('public')); // Serve frontend
 
 // Routes
 const authRoutes = require('./routes/auth');
@@ -34,9 +34,9 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     console.log("MongoDB connected");
 
-    // Start server
-    app.listen(3000, () => {
-      console.log("Server running on http://localhost:3000");
+    const PORT = process.env.PORT || 3000;
+    app.listen(PORT, () => {
+      console.log(`Server running on http://localhost:${PORT}`);
     });
   })
   .catch((err) => {
