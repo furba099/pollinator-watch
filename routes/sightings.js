@@ -1,53 +1,48 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const multer = require('multer');
-const jwt = require('jsonwebtoken');
-const Sighting = require('../models/Sighting');
+const multer = require("multer");
+const authMiddleware = require("../middleware/auth"); // ✅ correct path
 
-// Setup file storage
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, 'uploads/');
-    },
-    filename: function (req, file, cb) {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, uniqueSuffix + '-' + file.originalname);
-    }
-});
+// Use memory storage for demo (or replace with diskStorage if saving to server)
+const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
-// Middleware to check token
-function authenticateToken(req, res, next) {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-    if (!token) return res.sendStatus(401);
+router.post("/", authMiddleware, upload.single("image"), async (req, res) => {
+  try {
+    const { location } = req.body;
+    const imageFile = req.file;
 
-    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-        if (err) return res.sendStatus(403);
-        req.user = user;
-        next();
-    });
-}
-
-// Route to upload a sighting
-router.post('/', authenticateToken, upload.single('image'), async (req, res) => {
-    try {
-        const sighting = new Sighting({
-            userId: req.user.userId,
-            image: req.file.filename,
-            location: req.body.location,
-        });
-        await sighting.save();
-        res.json({ message: "Sighting uploaded successfully" });
-    } catch (err) {
-        res.status(500).json({ error: "Failed to upload sighting" });
+    if (!imageFile) {
+      return res.status(400).json({ error: "Image is required" });
     }
-});
 
-// Route to fetch all sightings
-router.get('/', async (req, res) => {
-    const sightings = await Sighting.find().populate('userId', 'email');
-    res.json(sightings);
+    // Simulate saving the file metadata
+    const imageInfo = {
+      filename: imageFile.originalname,
+      mimetype: imageFile.mimetype,
+      size: imageFile.size
+    };
+
+    // You can uncomment and adapt this block to save to MongoDB
+    /*
+    const Sighting = require("../models/Sighting");
+    const newSighting = new Sighting({
+      location,
+      image: imageFile.filename,
+      userId: req.userId
+    });
+    await newSighting.save();
+    */
+
+    res.status(201).json({
+      message: "Sighting uploaded successfully",
+      location,
+      image: imageInfo
+    });
+  } catch (err) {
+    console.error("Upload error:", err);
+    res.status(500).json({ error: "Server error while uploading sighting" });
+  }
 });
 
 module.exports = router;
