@@ -17,8 +17,20 @@
 
   <script>
     async function fetchSightings() {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        document.getElementById("gallery").innerHTML =
+          '<p class="text-center text-red-500">❌ Please log in first.</p>';
+        return;
+      }
+
       try {
-        const res = await fetch("https://pollinator-watch.onrender.com/api/sightings");
+        const res = await fetch("https://pollinator-watch.onrender.com/api/sightings", {
+          headers: {
+            Authorization: "Bearer " + token
+          }
+        });
+
         if (!res.ok) throw new Error("Failed to fetch data");
 
         const data = await res.json();

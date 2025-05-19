@@ -1,12 +1,17 @@
 const express = require("express");
 const router = express.Router();
 const multer = require("multer");
-const authMiddleware = require("../middleware/auth"); // ✅ correct path
+const authMiddleware = require("../middleware/auth");
+const Sighting = require("../models/Sighting"); // ✅ Required for GET route
 
-// Use memory storage for demo (or replace with diskStorage if saving to server)
+// Setup multer
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
+/**
+ * @route POST /api/sightings
+ * @desc Upload a new sighting
+ */
 router.post("/", authMiddleware, upload.single("image"), async (req, res) => {
   try {
     const { location } = req.body;
@@ -16,23 +21,19 @@ router.post("/", authMiddleware, upload.single("image"), async (req, res) => {
       return res.status(400).json({ error: "Image is required" });
     }
 
-    // Simulate saving the file metadata
     const imageInfo = {
       filename: imageFile.originalname,
       mimetype: imageFile.mimetype,
       size: imageFile.size
     };
 
-    // You can uncomment and adapt this block to save to MongoDB
-    /*
-    const Sighting = require("../models/Sighting");
     const newSighting = new Sighting({
       location,
-      image: imageFile.filename,
+      image: imageInfo,
       userId: req.userId
     });
+
     await newSighting.save();
-    */
 
     res.status(201).json({
       message: "Sighting uploaded successfully",
@@ -42,6 +43,20 @@ router.post("/", authMiddleware, upload.single("image"), async (req, res) => {
   } catch (err) {
     console.error("Upload error:", err);
     res.status(500).json({ error: "Server error while uploading sighting" });
+  }
+});
+
+/**
+ * @route GET /api/sightings
+ * @desc Get all sightings (for gallery)
+ */
+router.get("/", authMiddleware, async (req, res) => {
+  try {
+    const sightings = await Sighting.find().sort({ createdAt: -1 });
+    res.json(sightings);
+  } catch (err) {
+    console.error("Fetch error:", err);
+    res.status(500).json({ error: "Failed to fetch sightings" });
   }
 });
 

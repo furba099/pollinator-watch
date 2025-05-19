@@ -74,6 +74,11 @@
           uploadMessage.classList.remove("text-red-500");
           uploadMessage.classList.add("text-green-600");
           uploadForm.reset();
+
+          // 🔁 Redirect to gallery.html after 2 seconds
+          setTimeout(() => {
+            window.location.href = "gallery.html";
+          }, 2000);
         } else {
           uploadMessage.textContent = data.error || "❌ Upload failed.";
           uploadMessage.classList.remove("text-green-600");
