@@ -9,58 +9,104 @@
 <body class="bg-yellow-50 min-h-screen p-6">
   <h1 class="text-3xl font-bold text-center text-amber-700 mb-6">🐝 Bee Sightings Gallery</h1>
 
-  <div id="gallery" class="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3"></div>
+  <div id="gallery" class="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"></div>
 
-  <div class="text-center mt-6">
-    <a href="upload.html" class="text-amber-600 hover:underline">← Back to Upload</a>
+  <div class="text-center mt-10">
+    <a href="upload.html" class="text-amber-600 underline">⬅ Back to Upload</a>
+    <button onclick="logout()" class="ml-4 bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded-xl">
+      Logout
+    </button>
   </div>
 
   <script>
+    const gallery   = document.getElementById("gallery");
+    const token     = localStorage.getItem("token");
+    let   myUserId  = null;          // will hold current user’s id
+
+    /* ---------------- helpers ---------------- */
+    function logout() {
+      localStorage.removeItem("token");
+      window.location.href = "index.html";
+    }
+    function formatDate(d){ return new Date(d).toLocaleString(); }
+
+    /* ---------- 1. find who is logged-in ---------- */
+    async function fetchCurrentUser() {
+      const res = await fetch("https://pollinator-watch.onrender.com/api/auth/me", {
+        headers: { Authorization: "Bearer " + token }
+      });
+      if (!res.ok) throw new Error("Auth failed");
+      const me = await res.json();
+      myUserId = me._id;
+    }
+
+    /* ---------- 2. get all sightings ---------- */
     async function fetchSightings() {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        document.getElementById("gallery").innerHTML =
-          '<p class="text-center text-red-500">❌ Please log in first.</p>';
+      const res = await fetch("https://pollinator-watch.onrender.com/api/sightings");
+      if (!res.ok) throw new Error("Cannot load sightings");
+      return res.json();
+    }
+
+    /* ---------- 3. delete a sighting ---------- */
+    async function deleteSighting(id){
+      if(!confirm("Delete this sighting?")) return;
+      const res = await fetch(`https://pollinator-watch.onrender.com/api/sightings/${id}`,{
+        method:"DELETE",
+        headers:{ Authorization: "Bearer " + token }
+      });
+      if(res.ok){ location.reload(); }
+      else      { alert("❌ Could not delete."); }
+    }
+
+    /* ---------- 4. build the gallery ---------- */
+    async function buildGallery(){
+      if(!token){
+        gallery.innerHTML='<p class="text-center text-red-500">❌ Please log in first.</p>';
         return;
       }
 
-      try {
-        const res = await fetch("https://pollinator-watch.onrender.com/api/sightings", {
-          headers: {
-            Authorization: "Bearer " + token
-          }
-        });
+      try{
+        await fetchCurrentUser();
+        const data = await fetchSightings();
 
-        if (!res.ok) throw new Error("Failed to fetch data");
-
-        const data = await res.json();
-        const gallery = document.getElementById("gallery");
-
-        if (!data || data.length === 0) {
-          gallery.innerHTML = '<p class="text-center text-gray-500">No sightings uploaded yet.</p>';
+        if(!data.length){
+          gallery.innerHTML='<p class="text-center text-gray-500">No sightings yet.</p>';
           return;
         }
 
-        data.forEach(sighting => {
-          const card = document.createElement("div");
-          card.className = "bg-white p-4 rounded-xl shadow hover:shadow-md transition";
+        // newest first
+        data.reverse().forEach(s=>{
+          const card      = document.createElement("div");
+          card.className  ="bg-white p-4 rounded-xl shadow hover:shadow-lg transition";
 
-          card.innerHTML = `
-            <h2 class="font-semibold text-amber-700 mb-2">📍 ${sighting.location}</h2>
-            <p class="text-sm text-gray-600 mb-2">Uploaded by: user</p>
-            <p class="text-xs text-gray-500">File: ${sighting.image.filename}</p>
+          const isMine    = s.userId?._id === myUserId;
+
+          card.innerHTML  = `
+            <img src="https://pollinator-watch.onrender.com/uploads/${s.image}"
+                 alt="Bee"
+                 class="w-full h-48 object-cover rounded-lg mb-3"/>
+            <p class="text-lg font-semibold text-amber-700">${s.userId?.name || "Unknown"}</p>
+            <p class="text-xs text-gray-500 mb-2">${s.userId?.email || ""}</p>
+            <p class="text-sm"><strong>📍 Location:</strong> ${s.location}</p>
+            <p class="text-sm"><strong>📝 Details:</strong> ${s.description || "—"}</p>
+            <p class="text-xs text-gray-400 mt-2">${formatDate(s.date)}</p>
+            <p class="text-xs text-gray-400">File: ${s.image}</p>
+            ${ isMine
+                ? `<button onclick="deleteSighting('${s._id}')"
+                          class="mt-3 bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded">
+                     🗑 Delete
+                   </button>` : "" }
           `;
-
           gallery.appendChild(card);
         });
-      } catch (err) {
-        console.error("Error loading gallery:", err);
-        document.getElementById("gallery").innerHTML =
-          '<p class="text-center text-red-500">Error loading gallery data.</p>';
+
+      }catch(err){
+        console.error(err);
+        gallery.innerHTML='<p class="text-center text-red-500">Error loading gallery.</p>';
       }
     }
 
-    fetchSightings();
+    buildGallery();
   </script>
 </body>
 </html>

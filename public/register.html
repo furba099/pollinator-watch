@@ -13,6 +13,16 @@
 
     <form id="registerForm" class="space-y-4">
       <div>
+        <label for="name" class="block text-sm font-medium text-gray-700">Full Name</label>
+        <input type="text" id="name" name="name" required
+               class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500">
+      </div>
+      <div>
+        <label for="address" class="block text-sm font-medium text-gray-700">Address</label>
+        <input type="text" id="address" name="address" required
+               class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500">
+      </div>
+      <div>
         <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
         <input type="email" id="email" name="email" required
                class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500">
@@ -42,6 +52,8 @@
     registerForm.addEventListener("submit", async (e) => {
       e.preventDefault();
 
+      const name = registerForm.name.value;
+      const address = registerForm.address.value;
       const email = registerForm.email.value;
       const password = registerForm.password.value;
 
@@ -51,24 +63,27 @@
           headers: {
             "Content-Type": "application/json"
           },
-          body: JSON.stringify({ email, password })
+          body: JSON.stringify({ name, address, email, password })
         });
 
         const data = await response.json();
 
         if (response.ok) {
           registerMessage.textContent = "✅ Account created! Redirecting to login...";
+          registerMessage.classList.remove("text-red-500");
           registerMessage.classList.add("text-green-600");
           setTimeout(() => {
             window.location.href = "index.html";
           }, 1500);
         } else {
           registerMessage.textContent = data.error || "❌ Registration failed.";
+          registerMessage.classList.remove("text-green-600");
           registerMessage.classList.add("text-red-500");
         }
       } catch (err) {
         console.error(err);
         registerMessage.textContent = "❌ Something went wrong.";
+        registerMessage.classList.remove("text-green-600");
         registerMessage.classList.add("text-red-500");
       }
     });
