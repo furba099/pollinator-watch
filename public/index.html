@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Pollinator Watch – Login</title>
+  <title>Login – Pollinator Watch</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gradient-to-br from-yellow-100 to-amber-200 min-h-screen flex items-center justify-center">
+<body class="bg-gradient-to-br from-yellow-100 to-amber-100 min-h-screen flex items-center justify-center">
 
   <div class="w-full max-w-sm bg-white p-8 rounded-2xl shadow-xl">
-    <h1 class="text-2xl font-bold text-center text-amber-600 mb-6">🐝 Pollinator Watch Login</h1>
-    
+    <h1 class="text-2xl font-bold text-center text-amber-600 mb-6">🔐 Login</h1>
+
     <form id="loginForm" class="space-y-4">
       <div>
         <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
@@ -28,17 +28,23 @@
       </button>
     </form>
 
-    <p id="statusMessage" class="text-sm text-center mt-4 text-gray-600"></p>
+    <p id="loginMessage" class="text-sm text-center mt-4 text-gray-600"></p>
 
-    <p class="text-center text-sm mt-4">
-      Don't have an account?
-      <a href="register.html" class="text-amber-600 hover:underline">Sign up</a>
-    </p>
+    <div class="text-center mt-4 space-y-2">
+      <p class="text-sm">
+        Don't have an account?
+        <a href="register.html" class="text-amber-600 hover:underline">Sign up here</a>
+      </p>
+      <p class="text-sm">
+        Just browsing?
+        <a href="gallery.html" class="text-amber-600 hover:underline">View Bee Gallery</a>
+      </p>
+    </div>
   </div>
 
   <script>
     const loginForm = document.getElementById("loginForm");
-    const statusMessage = document.getElementById("statusMessage");
+    const loginMessage = document.getElementById("loginMessage");
 
     loginForm.addEventListener("submit", async (e) => {
       e.preventDefault();
@@ -49,9 +55,7 @@
       try {
         const response = await fetch("https://pollinator-watch.onrender.com/api/auth/login", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, password })
         });
 
@@ -59,25 +63,22 @@
 
         if (response.ok) {
           localStorage.setItem("token", data.token);
-          statusMessage.textContent = "✅ Logged in! Redirecting...";
-          statusMessage.classList.remove("text-red-500");
-          statusMessage.classList.add("text-green-600");
+          loginMessage.textContent = "✅ Login successful! Redirecting...";
+          loginMessage.classList.add("text-green-600");
 
           setTimeout(() => {
             window.location.href = "upload.html";
           }, 1500);
         } else {
-          statusMessage.textContent = data.error || "❌ Login failed.";
-          statusMessage.classList.remove("text-green-600");
-          statusMessage.classList.add("text-red-500");
+          loginMessage.textContent = data.error || "❌ Login failed.";
+          loginMessage.classList.add("text-red-500");
         }
-      } catch (error) {
-        statusMessage.textContent = "❌ Failed to connect to server.";
-        statusMessage.classList.add("text-red-500");
-        console.error("Login error:", error);
+      } catch (err) {
+        console.error(err);
+        loginMessage.textContent = "❌ Something went wrong.";
+        loginMessage.classList.add("text-red-500");
       }
     });
   </script>
-
 </body>
 </html>

@@ -21,8 +21,8 @@
       <div>
         <label class="block text-sm font-medium text-gray-700">Description</label>
         <textarea id="description" name="description" rows="3" required
-               class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500"
-               placeholder="Where exactly did you spot the bee?"></textarea>
+                  class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  placeholder="Where exactly did you spot the bee?"></textarea>
       </div>
 
       <div>
@@ -45,7 +45,12 @@
 
     <p id="uploadMessage" class="text-sm text-center mt-4 text-gray-600"></p>
 
-    <div class="text-center mt-6">
+    <div class="text-center mt-6 space-y-2">
+      <a href="gallery.html"
+         class="inline-block bg-amber-100 hover:bg-amber-200 text-amber-800 px-4 py-2 rounded-xl font-medium transition">
+        🖼️ View Bee Gallery
+      </a>
+      <br />
       <button onclick="logout()"
               class="bg-gray-300 hover:bg-gray-400 text-black px-4 py-2 rounded-xl font-medium transition">
         Logout

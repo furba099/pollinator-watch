@@ -34,7 +34,7 @@ const upload = multer({ storage });
 /**
  * @route   POST /api/sightings
  * @desc    Upload a new bee sighting
- * @access  Private (logged-in users only)
+ * @access  Private
  */
 router.post("/", authMiddleware, upload.single("image"), async (req, res) => {
   try {
@@ -62,7 +62,7 @@ router.post("/", authMiddleware, upload.single("image"), async (req, res) => {
 
 /**
  * @route   GET /api/sightings
- * @desc    Get all bee sightings (public)
+ * @desc    Get all sightings
  * @access  Public
  */
 router.get("/", async (req, res) => {
@@ -79,7 +79,7 @@ router.get("/", async (req, res) => {
 
 /**
  * @route   DELETE /api/sightings/:id
- * @desc    Delete a sighting (must be the uploader)
+ * @desc    Delete a sighting (only by uploader)
  * @access  Private
  */
 router.delete("/:id", authMiddleware, async (req, res) => {
@@ -91,9 +91,11 @@ router.delete("/:id", authMiddleware, async (req, res) => {
       return res.status(403).json({ error: "Not allowed to delete this sighting" });
     }
 
-    // Delete the image file from the /uploads folder
-    const filePath = path.join(__dirname, "..", "uploads", sighting.image);
-    if (fs.existsSync(filePath)) {
+    // ✅ Safely extract filename
+    const file = typeof sighting.image === "object" ? sighting.image.filename : sighting.image;
+    const filePath = path.join(__dirname, "..", "uploads", file);
+
+    if (file && fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
     }
 
@@ -102,6 +104,31 @@ router.delete("/:id", authMiddleware, async (req, res) => {
   } catch (err) {
     console.error("Delete error:", err);
     res.status(500).json({ error: "Failed to delete sighting" });
+  }
+});
+
+/**
+ * @route   DELETE /api/sightings/clear-all
+ * @desc    Delete all sightings and image files (admin only)
+ * @access  Unsafe — remove after use!
+ */
+router.delete("/clear-all", async (req, res) => {
+  try {
+    const sightings = await Sighting.find();
+
+    sightings.forEach((s) => {
+      const file = typeof s.image === 'object' ? s.image.filename : s.image;
+      const filePath = path.join(__dirname, "..", "uploads", file);
+      if (file && fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    });
+
+    await Sighting.deleteMany({});
+    res.json({ message: "🧹 All sightings and images deleted." });
+  } catch (err) {
+    console.error("Clear error:", err);
+    res.status(500).json({ error: "Failed to clear sightings" });
   }
 });
 

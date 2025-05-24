@@ -22,6 +22,16 @@
     </button>
   </div>
 
+  <!-- ✅ Modal Popup -->
+  <div id="imageModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-xl max-w-lg w-full p-4 relative shadow-xl">
+      <button onclick="closeModal()"
+              class="absolute top-2 right-2 text-red-500 hover:text-red-600 text-xl font-bold">&times;</button>
+      <img id="modalImage" class="w-full h-auto rounded-lg mb-3" />
+      <div id="modalDetails" class="text-sm text-gray-700 space-y-1"></div>
+    </div>
+  </div>
+
   <script>
     const gallery = document.getElementById("gallery");
     const token = localStorage.getItem("token");
@@ -66,6 +76,22 @@
       else alert("❌ Could not delete.");
     }
 
+    function openModal(sighting) {
+      const imageFilename = typeof sighting.image === 'object' ? sighting.image.filename : sighting.image;
+      document.getElementById("imageModal").classList.remove("hidden");
+      document.getElementById("modalImage").src = `https://pollinator-watch.onrender.com/uploads/${imageFilename}`;
+      document.getElementById("modalDetails").innerHTML = `
+        <p><strong>📍 Location:</strong> ${sighting.location}</p>
+        <p><strong>📝 Description:</strong> ${sighting.description || "—"}</p>
+        <p><strong>👤 Uploaded by:</strong> ${sighting.userId?.name || "Unknown"} (${sighting.userId?.email || ""})</p>
+        <p><strong>📅 Date:</strong> ${formatDate(sighting.date)}</p>
+      `;
+    }
+
+    function closeModal() {
+      document.getElementById("imageModal").classList.add("hidden");
+    }
+
     async function buildGallery() {
       try {
         await fetchCurrentUser();
@@ -81,17 +107,20 @@
           card.className = "bg-white p-4 rounded-xl shadow hover:shadow-lg transition";
 
           const isMine = s.userId?._id === myUserId;
+          const imageFilename = typeof s.image === 'object' ? s.image.filename : s.image;
+          const safeData = JSON.stringify(s).replace(/'/g, "\\'");
 
           card.innerHTML = `
-            <img src="https://pollinator-watch.onrender.com/uploads/${s.image}"
+            <img src="https://pollinator-watch.onrender.com/uploads/${imageFilename}"
                  alt="Bee"
-                 class="w-full h-48 object-cover rounded-lg mb-3"/>
+                 class="w-full h-48 object-cover rounded-lg mb-3 cursor-pointer"
+                 onclick='openModal(${safeData})' />
             <p class="text-lg font-semibold text-amber-700">${s.userId?.name || "Unknown"}</p>
             <p class="text-xs text-gray-500 mb-2">${s.userId?.email || ""}</p>
             <p class="text-sm"><strong>📍 Location:</strong> ${s.location}</p>
             <p class="text-sm"><strong>📝 Details:</strong> ${s.description || "—"}</p>
             <p class="text-xs text-gray-400 mt-2">${formatDate(s.date)}</p>
-            <p class="text-xs text-gray-400">File: ${s.image}</p>
+            <p class="text-xs text-gray-400">File: ${imageFilename}</p>
             ${ isMine
               ? `<button onclick="deleteSighting('${s._id}')"
                         class="mt-3 bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded">
