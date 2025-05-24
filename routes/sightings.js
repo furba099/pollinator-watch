@@ -4,10 +4,11 @@ const multer = require("multer");
 const jwt = require("jsonwebtoken");
 const path = require("path");
 const fs = require("fs");
+
 const Sighting = require("../models/Sighting");
 const User = require("../models/User");
 
-// ✅ Middleware to verify token
+// ✅ Auth Middleware
 function authMiddleware(req, res, next) {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
@@ -20,7 +21,7 @@ function authMiddleware(req, res, next) {
   });
 }
 
-// ✅ Multer for image uploads (to /uploads/)
+// ✅ Multer config to store images in /uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, "uploads/"),
   filename: (req, file, cb) => {
@@ -30,7 +31,11 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// ✅ POST /api/sightings — Upload new sighting
+/**
+ * @route   POST /api/sightings
+ * @desc    Upload a new bee sighting
+ * @access  Private (logged-in users only)
+ */
 router.post("/", authMiddleware, upload.single("image"), async (req, res) => {
   try {
     const { location, description } = req.body;
@@ -48,7 +53,6 @@ router.post("/", authMiddleware, upload.single("image"), async (req, res) => {
     });
 
     await newSighting.save();
-
     res.status(201).json({ message: "Sighting uploaded successfully" });
   } catch (err) {
     console.error("Upload error:", err);
@@ -56,13 +60,16 @@ router.post("/", authMiddleware, upload.single("image"), async (req, res) => {
   }
 });
 
-// ✅ GET /api/sightings — Fetch all sightings
+/**
+ * @route   GET /api/sightings
+ * @desc    Get all bee sightings (public)
+ * @access  Public
+ */
 router.get("/", async (req, res) => {
   try {
     const sightings = await Sighting.find()
       .sort({ createdAt: -1 })
       .populate("userId", "name email");
-
     res.json(sightings);
   } catch (err) {
     console.error("Fetch error:", err);
@@ -70,7 +77,11 @@ router.get("/", async (req, res) => {
   }
 });
 
-// ✅ DELETE /api/sightings/:id — Delete a user's own sighting
+/**
+ * @route   DELETE /api/sightings/:id
+ * @desc    Delete a sighting (must be the uploader)
+ * @access  Private
+ */
 router.delete("/:id", authMiddleware, async (req, res) => {
   try {
     const sighting = await Sighting.findById(req.params.id);
@@ -80,9 +91,11 @@ router.delete("/:id", authMiddleware, async (req, res) => {
       return res.status(403).json({ error: "Not allowed to delete this sighting" });
     }
 
-    // Remove image file
+    // Delete the image file from the /uploads folder
     const filePath = path.join(__dirname, "..", "uploads", sighting.image);
-    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
 
     await sighting.deleteOne();
     res.json({ message: "Sighting deleted" });

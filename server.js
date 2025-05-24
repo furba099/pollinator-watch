@@ -4,12 +4,12 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
 
-// Load environment variables from .env file
+// ✅ Load environment variables from .env
 dotenv.config();
 
 const app = express();
 
-// ✅ CORS Configuration
+// ✅ CORS Configuration (allow all origins with credentials)
 app.use(cors({
   origin: true,
   credentials: true,
@@ -18,11 +18,11 @@ app.use(cors({
 }));
 
 // ✅ Middleware
-app.use(express.json()); // Parse JSON bodies
-app.use('/uploads', express.static(path.join(__dirname, 'uploads'))); // Serve image files
-app.use(express.static('public')); // Serve frontend HTML from /public
+app.use(express.json()); // for parsing application/json
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'))); // to serve image files
+app.use(express.static('public')); // to serve static frontend files like .html
 
-// ✅ Routes
+// ✅ API Routes
 const authRoutes = require('./routes/auth');
 const sightingsRoutes = require('./routes/sightings');
 
